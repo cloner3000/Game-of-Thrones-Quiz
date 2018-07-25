@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+
+
+<html lang="en" ng-app="quizApp">
+
+<head>
+<meta charset="utf-8">
+<title>Quiz Application</title>
+
+<link rel="stylesheet" type="text/css" href="css/styles.css">
+<link rel="stylesheet" type="text/css" href="css/font-awesome-4.7.0/css/font-awesome.min.css">
+
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular-route.js"></script>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+</head>
+
+<body>
+  <!--- background music when the page loads --->
+  <audio id="myAudio" loop>
+    <source src="audio/audio.mp3" type="audio/mp3">
+  </audio>
+
+
+
+
+  <!-- The main text controller-->
+  <div class="bg">
+  <div ng-controller = "MainController as main" class="container-fluid main-text" ng-hide="main.quizMetrics.quizActive || main.quizMetrics.resultsActive" >
+    <h1>{{main.heading}} </h1>
+    <p>{{main.paragraph}}<p>
+      <button class="btn btn-primary" ng-click= "main.activateQuiz()">Start Quiz </button>
+
+  </div><!-- End of the main (StartQuiz page) controller --->
+
+
+  <div class="container main-text-2 top-buffer"   ng-controller= "QuestionsController as quiz" ng-show="quiz.quizMetrics.quizActive">
+    <div class="row">
+        <div class="col-sm-8">
+          <h4>Progress:</h4>
+
+          <div class="btn-toolbar" >
+            <button type="button" class="btn" ng-repeat="questions in quiz.dataService.quizQuestions" ng-class="{'btn-info':questions.selected!== null ,'btn-danger':questions.selected == null}"
+            ng-click="quiz.setQuestion($index)" >
+              <span class="glyphicon" ng-class="{'glyphicon-pencil':questions.selected!== null ,'glyphicon-question-sign':questions.selected == null}"></span>
+
+            </button>
+          </div>
+        </div>
+
+        <div class="col-sm-4">
+          <div class="row">
+        <h4>Legend:</h4>
+        <div class="col-sm-4">
+            <button class="btn btn-info">
+                <span class="glyphicon  glyphicon-pencil"></span>
+            </button>
+            <p>Answered</p>
+        </div>
+        <div class="col-sm-4">
+            <button class="btn btn-danger">
+                <span class="glyphicon glyphicon-question-sign"></span>
+            </button>
+            <p>Unanswered</p>
+        </div>
+    </div>
+
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="alert alert-danger" ng-show="quiz.check">
+          Error! You haven't answered all the questions
+          <button class="close"  ng-click="quiz.check = false">&times</button>
+        </div>
+        <h4> QUESTION:</h4>
+        <div class="well well-sm" ng-hide="quiz.finalise">
+          <div class="row">
+           <div class="col-sm-12">
+            <div class="special">
+             <h5>{{quiz.activeQuestion+1  + " ."  + quiz.dataService.quizQuestions[quiz.activeQuestion].text}}</h5>
+             <div class="row">
+               <div class="col-sm-6" ng-repeat="answer in quiz.dataService.quizQuestions[quiz.activeQuestion].possibilities">
+                 <h5 class="answer"
+                 ng-class="{'bg-info': $index === quiz.dataService.quizQuestions[quiz.activeQuestion].selected }"
+                 ng-click="quiz.selectAnswer($index)"">
+                    {{answer.answer}}
+                  </h5>
+
+               </div>
+
+             </div>
+           </div>
+
+           </div>
+
+          </div>
+        </div>
+        <div class="well well-sm" ng-show="quiz.finalise">
+          <div class="row">
+            <div class="col-xs-12">
+
+              <h3 style="color: black">Are you sure you want to finish the quiz? </h3>
+              <button class="btn btn-success" ng-click="quiz.finaliseAnswer()">Yes </button>
+              <button class="btn btn-danger" ng-click="quiz.finalise = false">No</button>
+            </div>
+          </div>
+
+        </div>
+
+      </div><!-- End of questions Controller --->
+
+
+<button class="btn btn-warning" ng-click="quiz.questionAnswered()"> Continue</button>
+
+    </div>
+
+    <div class= "container main-text-2" ng-controller="ResultsController as results" ng-show="results.quizMetrics.resultsActive">
+      <div class="row">
+        <div class="col-xs-8">
+          <h3>Results:</h3>
+          <div class="btn-toolbar">
+            <button class="btn" ng-repeat="question in results.dataService.quizQuestions"
+            ng-class="{'btn-success':question.correct , 'btn-danger': !question.correct}"
+            ng-click="results.setActiveQuestion($index)">
+
+            <span class="glyphicon" ng-class="{'glyphicon-ok': question.correct, 'glyphicon-remove': !question.correct}"></span>
+
+          </div>
+        </div>
+
+      </div><!--- End of buttons on the results page --->
+
+
+      <div class="row">
+        <div class="col-xs-12">
+          <h2>You scored {{results.quizMetrics.numCorrect}} out of {{results.dataService.quizQuestions.length}}</h2>
+
+          <h2><strong>{{results.calculatePercentage() | number:2}} %</strong></h2>
+
+        </div>
+      </div>
+
+
+      <div class="row">
+    <h3>Questions:</h3>
+    <div class="well well-sm">
+        <div class="row">
+            <div class="col-xs-12">
+              <div class="special">
+
+                <h4> {{results.activeQuestion+1 +". "+results.dataService.quizQuestions[results.activeQuestion].text}} </h4>
+
+                <div class="row"
+                     ng-if="results.dataService.quizQuestions[results.activeQuestion].type === 'text'">
+
+                         <div class="col-sm-6" ng-repeat="answer in results.dataService.quizQuestions[results.activeQuestion].possibilities">
+                             <h4 class="answer" ng-class="results.getAnswerClass($index)">
+
+                                     {{answer.answer}}
+                                     <p class="pull-right" ng-show="$index!== results.quizMetrics.correctAnswers[results.activeQuestion] && $index === results.dataService.quizQuestions[results.activeQuestion].selected ">Selected Answer</p>
+
+                                     <p class="pull-right" ng-show="$index === results.quizMetrics.correctAnswers[results.activeQuestion]">Correct Answer</p>
+
+                             </h4>
+                         </div>
+                </div>
+
+            </div>
+          </div>
+        </div>
+    </div>
+    <button class="btn btn-primary btn-lg" ng-click="results.reset()">Home</button>
+</div>
+    </div>
+  </div>
+  <script>
+
+    var myAudio = document.getElementById('myAudio');
+    myAudio.autoplay = true;
+    myAudio.load();
+    myAudio.preload ="auto";
+
+  </script>
+
+
+    <script src="js/app.js"></script>
+
+  <script src="js/main-text-controller.js"></script>
+  <script src="js/questions-controller.js"></script>
+  <script src="js/results.js"></script>
+  <script src="js/factory.js"></script>
+  <script src="js/quizMetricsFactory.js"></script>
+
+
+
+
+
+</body>
+
+
+
+
+</html>
